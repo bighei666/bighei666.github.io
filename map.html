@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>TCDA-Map</title>
+    <style>
+        body {
+            margin: 0;
+        }
+
+        #map-container {
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #imginfo {
+            width: 50px;
+            height: 50px;
+            position: absolute;
+            border-radius: 100px;
+        }
+
+        /* 自定义全屏按钮样式 */
+        .custom-button {
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            z-index: 1000;
+            display: flex;
+            flex-flow: column;
+            gap: 10px;
+        }
+
+        .custom-button-zoom {
+            display: flex;
+            flex-flow: column;
+            background-color: #fff;
+            padding: 5px;
+            border-radius: 5px;
+            gap: 5px;
+        }
+
+        .custom-button-zoom img {
+            width: 20px;
+            height: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map-container"></div>
+    <!-- 右上角自定义组件 -->
+    <div class="custom-button">
+        <div class="custom-button-zoom">
+            <div id="zoom-in">
+                <img src="https://cdn.data.byecode.com/userdata/ecYgqwSxtgxVq8P0jGbN99uQOqroQAjd/%E5%8A%A0-1.png?size=1817&appId=057eb14718264c42b16934e8831eec98"
+                    alt="">
+            </div>
+            <div id="zoom-out">
+                <img src="https://cdn.data.byecode.com/userdata/u6pQJcijwxjfa1z1G8aNuFv6bnpO2dJj/%E5%87%8F.png?size=1534&appId=057eb14718264c42b16934e8831eec98"
+                    alt="">
+            </div>
+        </div>
+        <div class="custom-button-zoom custom-screen">
+            <img src="https://cdn.data.byecode.com/userdata/B5y9HCnig5MOgv8tcm4drzNdY7biN4tX/%E5%85%A8%E5%B1%8F.png?size=2492&appId=057eb14718264c42b16934e8831eec98"
+                alt="">
+        </div>
+    </div>
+    <!-- 企业logo -->
+    <img id="imginfo" alt="">
+</body>
+<script type="text/javascript">
+    const getUrlParams = () => {
+        const params = new URLSearchParams(window.location.search);
+        return {
+            lat: parseFloat(params.get('lat')) || 39.9042,
+            lng: parseFloat(params.get('lng')) || 116.4074,
+            imgSrc: params.get('imgSrc') || 'https://cdn.data.byecode.com/userdata/qZzcUc9l2fDU7rSZz5OpoYVhfk2OO3uB/默认标题-2025-05-13-11-41-37.png?size=35002&appId=P6ZPR7XmOIWt'
+        }
+    }
+
+    // 自定义全屏按钮功能
+    document.querySelector('.custom-screen').addEventListener('click', toggleFullscreen);
+
+    function toggleFullscreen() {
+        const container = document.getElementById("map-container");
+        if (!document.fullscreenElement) {
+            container.requestFullscreen().catch(console.error);
+        } else {
+            document.exitFullscreen();
+        }
+    }
+
+    // 初始化地图函数
+    const initMap = () => {
+        const { lat, lng, imgSrc } = getUrlParams();
+        const map = new BMap.Map("map-container");
+        const point = new BMap.Point(lng, lat);
+
+        // 初始化地图
+        map.centerAndZoom(point, 15);
+        map.enableScrollWheelZoom(true);
+
+        // 自定义缩放控制
+        document.getElementById('zoom-in').addEventListener('click', () => {
+            map.setZoom(map.getZoom() + 1); // 放大一级
+        });
+
+        document.getElementById('zoom-out').addEventListener('click', () => {
+            map.setZoom(map.getZoom() - 1); // 缩小一级
+        });
+
+        // 创建自定义覆盖物
+        const CustomOverlay = function (point, imgSrc) {
+            this._point = point;
+            this._img = document.getElementById('imginfo')
+            this._img.src = imgSrc
+        }
+
+        // 继承Overlay
+        CustomOverlay.prototype = new BMap.Overlay();
+
+        // 初始化覆盖物
+        CustomOverlay.prototype.initialize = function (map) {
+            this._map = map;
+            map.getPanes().markerPane.appendChild(this._img);
+            return this._img;
+        }
+
+        // 更新位置 ?lat=59.43600971632525&lng=24.867939345595374
+        CustomOverlay.prototype.draw = function () {
+            const position = this._map.pointToOverlayPixel(this._point);
+            this._img.style.left = position.x + 'px';
+            this._img.style.top = position.y + 'px';
+        }
+
+        // 创建实例
+        const marker = new CustomOverlay(
+            point,
+            imgSrc
+        );
+
+        map.addOverlay(marker);
+
+    }
+</script>
+<script src="https://api.map.baidu.com/api?v=3.0&ak=cUv5I7TVrfwAPh4zem3LxtpLzHEmXVWG&callback=initMap">
+</script>
+
+</html>
